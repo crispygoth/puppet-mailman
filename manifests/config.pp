@@ -5,23 +5,20 @@ define mailman::config(
   $ensure = present,
 ) {
 
-  if !defined(Concat["/var/lib/mailman/lists/${mlist}/puppet-config.conf"]) {
-    concat {"/var/lib/mailman/lists/${mlist}/puppet-config.conf":
-      owner => root,
-      group => root,
-      mode  => '0644',
-    }
-  }
+  ensure_resource('concat', "/var/lib/mailman/lists/${mlist}/puppet-config.conf", {
+    owner  => root,
+    group  => root,
+    mode   => '0644',
+    notify => Exec["load configuration on ${mlist}"],
+  })
+  ensure_resource('exec', "load configuration on ${mlist}", {
+    refreshonly => true,
+    command     => "/usr/sbin/config_list -i /var/lib/mailman/lists/${mlist}/puppet-config.conf ${mlist}",
+  })
 
   concat::fragment {$name:
     target  => "/var/lib/mailman/lists/${mlist}/puppet-config.conf",
     content => template('mailman/config_list.erb'),
-    notify  => Exec["load configuration ${variable} on ${mlist}"],
     require => [Class['mailman'], Maillist[$mlist]],
-  }
-  exec {"load configuration ${variable} on ${mlist}":
-    refreshonly => true,
-    command     => "/usr/sbin/config_list -i /var/lib/mailman/lists/${mlist}/puppet-config.conf ${mlist}",
-    onlyif      => "/usr/sbin/config_list -i /var/lib/mailman/lists/${mlist}/puppet-config.conf -c ${mlist}",
   }
 }
