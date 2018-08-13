@@ -30,6 +30,6 @@ class mailman(
     owner   => 'root',
     group   => 'list',
     mode    => '0640',
-    content => $hased_pass,
+    content => "${hased_pass}\n",
   }
 }
